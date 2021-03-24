@@ -8,7 +8,7 @@ class State:
         self.is_start = False
 
     def __str__(self):
-        return self.name + ' ' + str(self.is_end) + ' ' + str(self.is_start)
+        return self.name 
 
 class NodeGraph:
     def __init__(self, start, end):
@@ -16,6 +16,8 @@ class NodeGraph:
         self.end = end 
         end.is_end = True   
 
+# http://neerc.ifmo.ru/wiki/index.php?title=Построение_по_НКА_эквивалентного_ДКА,_алгоритм_Томпсона
+# http://neerc.ifmo.ru/wiki/index.php?title=Минимизация_ДКА,_алгоритм_Хопкрофта_(сложность_O(n_log_n))
 class DFA:
     def __init__(self):
         self.start = None
@@ -222,7 +224,7 @@ class DFA:
                 return True
         return False
 
-
+# https://en.wikipedia.org/wiki/Thompson%27s_construction
 class NFA:
     def __init__(self):
         self.alphabet = []
@@ -266,7 +268,7 @@ class NFA:
             elif t.name == 'OR':
                 self.handle_or(t, self.nfa_stack)
             elif t.name == 'STAR':
-                self.handle_rep(t, self.nfa_stack)
+                self.handle_star(t, self.nfa_stack)
                             
         self.alphabet = list(char_set)
         self.nfa_head = self.nfa_stack.pop()
@@ -319,7 +321,7 @@ class NFA:
 
         nfa_stack.append(nfa)
     
-    def handle_rep(self, t, nfa_stack):
+    def handle_star(self, t, nfa_stack):
         n1 = nfa_stack.pop()
         s0 = self.create_state()
         s1 = self.create_state()

@@ -26,6 +26,7 @@ def main():
         if p == 'exit':
             break
         dfa = build(p)
+        dfa.print_graph()
         if dfa is None:
             continue
 
