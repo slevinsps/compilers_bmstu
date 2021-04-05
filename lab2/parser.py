@@ -23,6 +23,5 @@ class GrammaticParser():
                      'startsymbol': startsymbol,
                      'rules': rules}
 
-        print(grammatic)
         return grammatic
         
