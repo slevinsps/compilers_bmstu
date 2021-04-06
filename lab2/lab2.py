@@ -26,8 +26,12 @@ def elimination_of_recursion_immediate_1(grammatic):
                 new_rules[left] = [[new_symbol]]
 
             for i in range(len(beta)):
-                new_rules[left].append(beta[i])
-                new_rules[left].append(beta[i] + [new_symbol])
+                if beta[i][-1] == 'eps':
+                    new_rules[left].append([new_symbol])
+                    new_rules[left].append(beta[i])
+                else:
+                    new_rules[left].append(beta[i])
+                    new_rules[left].append(beta[i] + [new_symbol])
             for i in range(len(alpha)):
                 new_rules[new_symbol].append(alpha[i])
                 new_rules[new_symbol].append(alpha[i] + [new_symbol])
@@ -94,6 +98,8 @@ def elimination_of_recursion_indirect(grammatic):
                 for p in range(len(ai_production_array[k])):
                     if Aj == ai_production_array[k][p]:
                         for aj_production in aj_production_array:
+                            if aj_production[-1] == 'eps':
+                                aj_production = aj_production[:-1]
                             new_production_array.append(new_production + aj_production + ai_production_array[k][p + 1:])
                         new_production = []
                         break      
@@ -102,7 +108,6 @@ def elimination_of_recursion_indirect(grammatic):
 
                 if len(new_production) > 0:
                     new_production_array.append(new_production)
-
             rules[Ai] = new_production_array
 
         new_rules, new_nonterminal = elimination_of_recursion_immediate_2({Ai: rules[Ai]})
