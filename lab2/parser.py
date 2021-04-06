@@ -12,16 +12,23 @@ class GrammaticParser():
             terminal = f.readline().strip(' ').strip('\n').split(' ')
             startsymbol = f.readline().strip(' ').strip('\n')
             for line in f:
-                readed_line = line.strip(' ').strip('\n').split(' ')
-                if readed_line[0] not in rules:
-                    rules[readed_line[0]] = []
+                all_productions = line.strip(' ').strip('\n').split('|')
+                readed_line = all_productions[0].strip(' ').strip('\n').split(' ')
+                symbol = readed_line[0]
+                if symbol not in rules:
+                    rules[symbol] = [readed_line[2:]]
+                else:
+                    rules[symbol].append(readed_line[2:])
 
-                rules[readed_line[0]].append(readed_line[2:])
+                for production in all_productions[1:]:
+                    readed_line = production.strip(' ').strip('\n').split(' ')
+                    rules[symbol].append(readed_line)
 
         grammatic = {'nonterminal': nonterminal,
                      'terminal': terminal,
                      'startsymbol': startsymbol,
                      'rules': rules}
+
 
         return grammatic
         

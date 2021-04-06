@@ -1,4 +1,6 @@
 from parser import GrammaticParser
+import argparse
+
 
 # Алгоритм 2.13 из книги АХО А., УЛЬМАН Дж. Теория синтаксического анализа, перевода и компиляции: В 2-х томах. Т.1.: Синтаксический анализ. - М.: Мир, 1978.
 def elimination_of_recursion_immediate_1(grammatic):
@@ -20,12 +22,16 @@ def elimination_of_recursion_immediate_1(grammatic):
             new_nonterminal.add(new_symbol)
             new_rules[left] = []
             new_rules[new_symbol] = []
+            if len(beta) == 0:
+                new_rules[left] = [[new_symbol]]
+
             for i in range(len(beta)):
                 new_rules[left].append(beta[i])
                 new_rules[left].append(beta[i] + [new_symbol])
             for i in range(len(alpha)):
                 new_rules[new_symbol].append(alpha[i])
                 new_rules[new_symbol].append(alpha[i] + [new_symbol])
+            
 
     grammatic['rules'] = new_rules
     grammatic['nonterminal'] = list(new_nonterminal)
@@ -147,10 +153,9 @@ def get_longest_prefix(production):
     for p in production:
         s = ''
         for i in range(len(p)):
-            s += p[i]
+            s += p[i] + '|'
         production_string_array.append(s)
     production_string_array.sort()
-    print(production_string_array)
     
     max_prefix = ''
     for i in range(len(production_string_array) - 1):
@@ -169,44 +174,88 @@ def get_longest_prefix(production):
         if len(prefix) > len(max_prefix):
             max_prefix = prefix
 
-    max_prefix_arr = []
-    for i in range(len(max_prefix)):
-        max_prefix_arr.append(max_prefix[i])
+    max_prefix_arr = max_prefix.split('|')[:-1]
 
     return max_prefix_arr
     
+# Алгоритм 4.10 из книги АХО А.В, ЛАМ М.С., СЕТИ Р., УЛЬМАН Дж.Д. Компиляторы: принципы, технологии и инструменты. – М.: Вильямс, 2008
 def left_factorization(grammatic):
     rules = {}
+    symbol_epsilon_dict = {}
+
     for symbol, production in grammatic['rules'].items():
+        symbol_epsilon_dict[symbol] = False
+
         prefix = get_longest_prefix(production)
         if len(prefix) == 0:
             continue
+
+        new_symbol = symbol + '1'
         
         beta_arr = []
         gamma_arr = []
 
         for p in production:
             if prefix == p[:len(prefix)]:
-                beta_arr.append(p[len(prefix):])
+                beta = p[len(prefix):]
+                if len(beta) > 0:
+                    beta_arr.append(beta)
+                else:
+                    symbol_epsilon_dict[new_symbol] = True
             else:
                 gamma_arr.append(p)
         
-        print(beta_arr, gamma_arr)
-        new_symbol = symbol + '1'
-        # rules[symbol] = 
+        grammatic['nonterminal'].append(new_symbol)
+
+        rules[symbol] = [prefix + [new_symbol]] + gamma_arr
+        rules[new_symbol] = beta_arr
+
+    for symbol in rules:
+        grammatic['rules'][symbol] = rules[symbol]
+        if symbol in symbol_epsilon_dict and symbol_epsilon_dict[symbol]:
+            grammatic['rules'][symbol].append(['eps'])
+    return grammatic
+
+
+def print_grammatic(grammatic):
+    print('non terminal:', end = ' ')
+    for i in range(len(grammatic['nonterminal'])):
+        print(grammatic['nonterminal'][i], end = ' ')
+    print()
+    print('terminal:', end = ' ')
+    for i in range(len(grammatic['terminal'])):
+        print(grammatic['terminal'][i], end = ' ')
+    print()
+    print('start symbol:', end = ' ')
+    print(grammatic['startsymbol'])
+    for symbol, production in grammatic['rules'].items():
+        print(symbol, '->', end = ' ') 
+        for i in range(len(production)):
+            for pi in production[i]:
+                print(pi, end = ' ') 
+            if i < len(production) - 1:
+                print('|', end = ' ')
+        print()
 
 def main():
-    path = 'gr6.txt'
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-p", "--path", help="path to grammatic txt file", required=True)
+    args = parser.parse_args()
+    path = args.path
 
     grammaticParser = GrammaticParser()
     grammatic = grammaticParser.parse(path)
 
-    ## elimination_of_recursion_immediate1(grammatic)
+    print('Input grammatic:')
+    print_grammatic(grammatic)
+    print('----------------')
+
+    grammatic = elimination_of_recursion_immediate_1(grammatic)
     # grammatic = elimination_of_recursion_indirect(grammatic)
     # grammatic = remove_unattainable_symbols(grammatic)
-    # print(grammatic)
-    left_factorization(grammatic)
-
+    # grammatic = left_factorization(grammatic)
+    print('Output grammatic:')
+    print_grammatic(grammatic)
 
 if __name__ == '__main__':
     main()
