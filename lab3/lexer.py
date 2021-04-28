@@ -42,6 +42,10 @@ class Lexer():
             [";"]
         )
 
+        self.operator_assignment = set(
+            ["="]
+        )
+
 
         self.tokens = []
         self.num = 0
@@ -63,6 +67,7 @@ class Lexer():
         return res
 
     def lex(self, source):
+        self.num = 0
         chars = list(source)
         self.tokens = []
 
@@ -71,7 +76,7 @@ class Lexer():
 
             if char == "\n":
                 char = chars.pop(0)
-                self.tokens.append({"type": "NL"})
+                # self.tokens.append({"type": "NL"})
                 continue
 
             if self.is_operator(''.join(chars[0:2])) or self.is_operator(char):
@@ -91,7 +96,11 @@ class Lexer():
                     type_ += '_blockopenbrackets'
                 elif operator in self.block_close_brackets:
                     type_ += '_blockclosebrackets'
-
+                elif operator in self.operator_assignment: 
+                    type_ += '_assignment'
+                elif operator in self.operator_sep: 
+                    type_ += '_sep'
+                
                 self.tokens.append({"type": type_, "value": operator})
                 continue
 
@@ -123,7 +132,6 @@ class Lexer():
                 continue
 
             chars.pop(0)
-
         return self.tokens
 
 
