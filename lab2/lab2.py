@@ -43,6 +43,7 @@ def elimination_of_recursion_immediate_1(grammatic):
 
 # Алгоритм 4.8 из книги АХО А.В, ЛАМ М.С., СЕТИ Р., УЛЬМАН Дж.Д. Компиляторы: принципы, технологии и инструменты. – М.: Вильямс, 2008
 def elimination_of_recursion_immediate_2(rules):
+    # print('rules = ', rules)
     new_rules = rules.copy()
     new_nonterminal = set()
     epsilon = 'eps'
@@ -52,11 +53,12 @@ def elimination_of_recursion_immediate_2(rules):
         alpha = []
         beta = []
         for i in range(len(right)):
-            if right[i][0] == left and len(right[i]) > 1:
+            if right[i][0] == left and len(right[i]) >= 1:
                 alpha.append(right[i][1:])
             else:
                 beta.append(right[i])
 
+        # print('alpha = ', alpha, 'beta = ', beta)
         if len(beta) == 0:
             beta.append([])
         # print('alpha =', alpha)
@@ -75,6 +77,7 @@ def elimination_of_recursion_immediate_2(rules):
                 new_rules[left].append(symbol + [new_symbol])
             for i in range(len(alpha)):
                 new_rules[new_symbol].append(alpha[i] + [new_symbol])
+
             new_rules[new_symbol].append([epsilon])
 
     return new_rules, new_nonterminal
@@ -84,6 +87,7 @@ def elimination_of_recursion_indirect(grammatic):
     rules = grammatic['rules']
     nonterminal = list(rules.keys())
     new_nonterminal_arr = grammatic['nonterminal'].copy()
+    # print(nonterminal)
     for i in range(len(nonterminal)):
         Ai = nonterminal[i]
         for j in range(i):
@@ -95,21 +99,18 @@ def elimination_of_recursion_indirect(grammatic):
 
             for k in range(len(ai_production_array)):
                 new_production = []
-                for p in range(len(ai_production_array[k])):
-                    if Aj == ai_production_array[k][p]:
-                        for aj_production in aj_production_array:
+                if ai_production_array[k][0] == Aj:
+                    for aj_production in aj_production_array:
                             if aj_production[-1] == 'eps':
                                 aj_production = aj_production[:-1]
-                            new_production_array.append(new_production + aj_production + ai_production_array[k][p + 1:])
-                        new_production = []
-                        break      
-                    else:
-                        new_production.append(ai_production_array[k][p])
+                            new_production_array.append(aj_production + ai_production_array[k][1:])
+                else:
+                    new_production.extend(ai_production_array[k])
 
                 if len(new_production) > 0:
                     new_production_array.append(new_production)
             rules[Ai] = new_production_array
-
+        # print('AAA')
         new_rules, new_nonterminal = elimination_of_recursion_immediate_2({Ai: rules[Ai]})
         new_nonterminal_arr += list(new_nonterminal)
         for a in new_rules:
@@ -194,26 +195,32 @@ def left_factorization(grammatic):
         prefix = get_longest_prefix(production)
         if len(prefix) == 0:
             continue
-
-        new_symbol = symbol + '1'
         
-        beta_arr = []
-        gamma_arr = []
+        new_symbol = symbol
 
-        for p in production:
-            if prefix == p[:len(prefix)]:
-                beta = p[len(prefix):]
-                if len(beta) > 0:
-                    beta_arr.append(beta)
+        while len(prefix) > 0:
+            new_symbol += '1'
+            
+            beta_arr = []
+            gamma_arr = []
+
+            for p in production:
+                if prefix == p[:len(prefix)]:
+                    beta = p[len(prefix):]
+                    if len(beta) > 0:
+                        beta_arr.append(beta)
+                    else:
+                        symbol_epsilon_dict[new_symbol] = True
                 else:
-                    symbol_epsilon_dict[new_symbol] = True
-            else:
-                gamma_arr.append(p)
-        
-        grammatic['nonterminal'].append(new_symbol)
+                    gamma_arr.append(p)
+            
+            grammatic['nonterminal'].append(new_symbol)
 
-        rules[symbol] = [prefix + [new_symbol]] + gamma_arr
-        rules[new_symbol] = beta_arr
+            rules[symbol] = [prefix + [new_symbol]] + gamma_arr
+            rules[new_symbol] = beta_arr
+
+            production = rules[symbol]
+            prefix = get_longest_prefix(production)
 
     for symbol in rules:
         grammatic['rules'][symbol] = rules[symbol]
@@ -255,8 +262,8 @@ def main():
     print_grammatic(grammatic)
     print('----------------')
 
-    grammatic = elimination_of_recursion_immediate_1(grammatic)
-    # grammatic = elimination_of_recursion_indirect(grammatic)
+    # grammatic = elimination_of_recursion_immediate_1(grammatic)
+    grammatic = elimination_of_recursion_indirect(grammatic)
     # grammatic = remove_unattainable_symbols(grammatic)
     # grammatic = left_factorization(grammatic)
     print('Output grammatic:')

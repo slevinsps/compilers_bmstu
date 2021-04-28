@@ -156,7 +156,7 @@ def test_remove_indirect_recursion():
                                     'E1': [['+', 'T', 'E1'], ['eps']],
                                     'T': [['F', 'T1']],
                                     'T1': [['*', 'F', 'T1'], ['eps']], 
-                                    'F': [['a'], ['(', 'F', 'T1', 'E1', ')']]}
+                                    'F': [['a'], ['(', 'E', ')']]}
                         }
         },
         # 4.9
@@ -215,7 +215,31 @@ def test_remove_indirect_recursion():
                                     'S1': [['a', 'S1'], ['eps']]
                             }
                         },
-        },     
+        },    
+        {
+            'grammatic':{ 
+                            'nonterminal': ['A, B, C, D'], 
+                            'terminal': ['a, b'], 
+                            'startsymbol': 'A', 
+                            'rules': {
+                                    'A': [['B', 'A']],
+                                    'B': [['C', 'b', 'A'], ['B', 'a', 'B'], ['eps']],
+                                    'C': [['A', 'A'], ['B', 'C'], ['a', 'C']]
+                            }
+                        },
+            'expected': { 
+                            'nonterminal': ['A, B, C, D', 'B1', 'C1'], 
+                            'terminal': ['a, b'], 
+                            'startsymbol': 'A', 
+                            'rules': {
+                                    'A': [['B', 'A']],
+                                    'B': [['C', 'b', 'A', 'B1'], ['B1']],
+                                    'C': [['B1', 'A', 'A', 'C1'], ['B1', 'C', 'C1'], ['a', 'C', 'C1']],
+                                    'B1': [['a', 'B', 'B1'], ['eps']],
+                                    'C1': [['b', 'A', 'B1', 'A', 'A', 'C1'], ['b', 'A', 'B1', 'C', 'C1'], ['eps']]
+                            }
+                        },
+        }, 
 
     ]
 
@@ -490,3 +514,7 @@ def test():
 
 if __name__ == '__main__':
     test()
+
+
+
+
