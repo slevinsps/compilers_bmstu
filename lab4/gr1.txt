@@ -1,5 +1,9 @@
-S A
-a b c d
+S F E D C T
+; if then else a := or xor and ( )
 S
-S -> A a | b
-A -> A c | S d | eps
+S -> F ;
+F -> if E then T else F | if E then F | a := E
+T -> if E then T else T | a := E
+E -> E or D | E xor D | D
+D -> D and C | C
+C -> a | ( E )

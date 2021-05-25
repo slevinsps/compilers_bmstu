@@ -1,0 +1,26 @@
+Programm Block ParamList Operator Tail Identificator Equation ArithEquation Term Factor Constant
+{ } ( ) < > <= >= <> = ; + - * / identificator constant
+Programm
+Programm -> Block
+Block -> { ParamList }
+ParamList -> Operator Tail
+ParamList -> Operator
+ParamList -> Operator ; Operator Tail
+ParamList -> Operator ; Operator ; Tail
+ParamList -> Operator ; Operator
+Tail -> ; Operator Tail | eps
+Operator -> identificator = Equation
+Equation -> ArithEquation < ArithEquation
+Equation -> ArithEquation <= ArithEquation
+Equation -> ArithEquation = ArithEquation
+Equation -> ArithEquation <> ArithEquation
+Equation -> ArithEquation >= ArithEquation
+Equation -> ArithEquation > ArithEquation
+Equation -> ArithEquation
+ArithEquation -> ArithEquation + Term
+ArithEquation -> ArithEquation - Term
+ArithEquation -> Term
+Term -> Term * Factor
+Term -> Term / Factor
+Term -> Factor
+Factor -> identificator | constant | ( ArithEquation )
