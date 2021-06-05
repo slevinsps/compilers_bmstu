@@ -17,10 +17,10 @@ Equation -> ArithEquation <> ArithEquation
 Equation -> ArithEquation >= ArithEquation
 Equation -> ArithEquation > ArithEquation
 Equation -> ArithEquation
-ArithEquation -> ArithEquation + Term
-ArithEquation -> ArithEquation - Term
+ArithEquation -> ArithEquation * Term
+ArithEquation -> ArithEquation / Term
 ArithEquation -> Term
-Term -> Term * Factor
-Term -> Term / Factor
+Term -> Term + Factor
+Term -> Term - Factor
 Term -> Factor
 Factor -> identificator | constant | ( ArithEquation )
