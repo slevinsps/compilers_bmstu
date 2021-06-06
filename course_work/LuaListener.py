@@ -14,6 +14,10 @@ class LuaListener(LuaListenerDeclaration):
     self.function_dict = {self.base_name_function: Node(self.base_name_function)}
     self.func_var_dict = {}
     self.func_var_dict[self.base_name_function] = []
+    self.func_local_var_dict = {}
+    self.func_local_var_dict[self.base_name_function] = set()
+    self.func_global_var_dict = {}
+    self.func_global_var_dict[self.base_name_function] = set()
     self.func_func_dict = {}
     self.func_func_dict[self.base_name_function] = []
     self.defined_functions = [self.base_name_function]
@@ -41,6 +45,8 @@ class LuaListener(LuaListenerDeclaration):
     self.defined_functions.append(funcname)
     self.func_var_dict[funcname] = []
     self.func_func_dict[funcname] = []
+    self.func_local_var_dict[funcname] = set()
+    self.func_global_var_dict[funcname] = set()
 
   def exitFuncname(self, ctx):
     pass
@@ -76,6 +82,24 @@ class LuaListener(LuaListenerDeclaration):
 
   def exitArgs(self, ctx):
       pass
+
+  def enterVarlist(self, ctx):
+    global_var_name = ctx.getText()
+    current_funtion = self.defined_functions[-1]
+    self.func_global_var_dict[current_funtion].add(global_var_name)
+
+  def exitVarlist(self, ctx):
+    pass
+
+
+
+  def enterAttnamelist(self, ctx):
+    local_var_name = ctx.getText()
+    current_funtion = self.defined_functions[-1]
+    self.func_local_var_dict[current_funtion].add(local_var_name)
+
+  def exitAttnamelist(self, ctx):
+    pass
 
   def enterRetstat(self, ctx):
     # print('RETURN', ctx.getText())

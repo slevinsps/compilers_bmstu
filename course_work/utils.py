@@ -39,8 +39,7 @@ def get_nodes_edges(function_dict):
     if len(val.next) == 0:
       continue
     nodes.append(key)
-    print(key)
-    print(val.next[0].name)
+
     for i in range(len(val.next)):
       edges.append([key, val.next[i].name])
   return nodes, edges

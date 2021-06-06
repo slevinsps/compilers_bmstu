@@ -18,7 +18,23 @@ def main(argv):
   walker.walk(listener, tree)
   listener.handleInfo()
   print(Trees.toStringTree(tree, None, parser))
+
+  
   draw_tree(listener.function_dict)
+  print('-' * 100)
+  print('Local vars')
+  for key in listener.func_local_var_dict:
+    local_vars =  list(listener.func_local_var_dict[key])
+    if len(local_vars) != 0:
+      print('func = ', key)
+      print('local vars = ', local_vars)
+  print('-' * 100)
+  print('Global vars')
+  for key in listener.func_global_var_dict:
+    global_vars = list(listener.func_global_var_dict[key])
+    if len(global_vars) != 0:
+      print('func = ', key)
+      print('global vars = ', global_vars)
  
 if __name__ == '__main__':
     main(sys.argv)

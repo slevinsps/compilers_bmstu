@@ -20,7 +20,7 @@ function add(num1, num2)
 end
 
 function max(num1, num2)
-  a1 = sub(num1, num2)
+  local a1 = sub(num1, num2)
   a2 = add(num1, num2)
   a3 = add(num1, num2)
   if (a1 > a2) then
