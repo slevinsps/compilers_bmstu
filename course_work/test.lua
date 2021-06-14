@@ -1,6 +1,9 @@
 function square(num)
   b7 = max(num, 5)
+  b8 = 15
   res = num * num
+  b7 = b7 + res
+  b8 = b7 + 3
   return res
 end
 

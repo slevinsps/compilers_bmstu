@@ -13,28 +13,42 @@ def main(argv):
   stream = CommonTokenStream(lexer)
   parser = LuaParser(stream)
   tree = parser.block()
+  print(Trees.toStringTree(tree, None, parser))
   listener = LuaListener()
   walker = ParseTreeWalker()
   walker.walk(listener, tree)
   listener.handleInfo()
-  print(Trees.toStringTree(tree, None, parser))
+  
 
   
   draw_tree(listener.function_dict)
   print('-' * 100)
   print('Local vars')
   for key in listener.func_local_var_dict:
-    local_vars =  list(listener.func_local_var_dict[key])
-    if len(local_vars) != 0:
-      print('func = ', key)
-      print('local vars = ', local_vars)
+    global_vars = listener.func_local_var_dict[key]
+    if len(global_vars) != 0:
+      if listener.function_dict[key].local:
+        print('local func', key, end = ' ')
+      else:
+        print('func', key, end = ' ')
+      print(':', end = ' ')
+      for var, value in global_vars.items():
+        print(var, '=',  listener.func_var_dict[key][var], end = '; ')
+      print()
+
   print('-' * 100)
   print('Global vars')
   for key in listener.func_global_var_dict:
-    global_vars = list(listener.func_global_var_dict[key])
+    global_vars = listener.func_global_var_dict[key]
     if len(global_vars) != 0:
-      print('func = ', key)
-      print('global vars = ', global_vars)
- 
+      if listener.function_dict[key].local:
+        print('local func', key, end = ' ')
+      else:
+        print('func', key, end = ' ')
+      print(':', end = ' ')
+      for var, value in global_vars.items():
+        print(var, '=',  listener.func_var_dict[key][var], end = '; ')
+      print()
+  
 if __name__ == '__main__':
     main(sys.argv)

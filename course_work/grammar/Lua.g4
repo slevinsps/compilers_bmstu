@@ -101,17 +101,6 @@ nameAndArgs
     : (':' NAME)? args
     ;
 
-/*
-var_
-    : NAME | prefixexp '[' exp ']' | prefixexp '.' NAME
-    ;
-prefixexp
-    : var_ | functioncall | '(' exp ')'
-    ;
-functioncall
-    : prefixexp args | prefixexp ':' NAME args
-    ;
-*/
 
 args
     : '(' explist? ')' | tableconstructor | string

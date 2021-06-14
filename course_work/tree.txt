@@ -1,11 +1,11 @@
 (block(stat
-    function(funcname square)(funcbody((parlist(namelist num)))(block(stat(varlist(var_ res)) = (explist(exp(exp(prefixexp(varOrExp(var_ num))))(operatorMulDivMod * )(exp(prefixexp(varOrExp(var_ num)))))))(retstat
+    function(funcname square)(funcbody((parlist(namelist num)))(block(stat(varlist(var_ b7)) = (explist(exp(prefixexp(varOrExp(var_ max))(nameAndArgs(args((explist(exp(prefixexp(varOrExp(var_ num)))), (exp(number 5))))))))))(stat(varlist(var_ b8)) = (explist(exp(number 15))))(stat(varlist(var_ res)) = (explist(exp(exp(prefixexp(varOrExp(var_ num))))(operatorMulDivMod * )(exp(prefixexp(varOrExp(var_ num)))))))(stat(varlist(var_ b7)) = (explist(exp(exp(prefixexp(varOrExp(var_ b7))))(operatorAddSub + )(exp(prefixexp(varOrExp(var_ res)))))))(stat(varlist(var_ b8)) = (explist(exp(exp(prefixexp(varOrExp(var_ b7))))(operatorAddSub + )(exp(number 3)))))(retstat
         return (explist(exp(prefixexp(varOrExp(var_ res))))))) end))(stat
     function(funcname sub)(funcbody((parlist(namelist num1, num2)))(block(stat(varlist(var_ res)) = (explist(exp(exp(prefixexp(varOrExp(var_ num1))))(operatorAddSub - )(exp(prefixexp(varOrExp(var_ num2)))))))(stat(varlist(var_ res_square)) = (explist(exp(prefixexp(varOrExp(var_ square))(nameAndArgs(args((explist(exp(prefixexp(varOrExp(var_ res))))))))))))(retstat
         return (explist(exp(prefixexp(varOrExp(var_ res_square))))))) end))(stat
-    function(funcname add)(funcbody((parlist(namelist num1, num2)))(block(stat(varlist(var_ res)) = (explist(exp(exp(prefixexp(varOrExp(var_ num1))))(operatorAddSub + )(exp(prefixexp(varOrExp(var_ num2)))))))(retstat
+    function(funcname add)(funcbody((parlist(namelist num1, num2)))(block(stat(varlist(var_ b5)) = (explist(exp(prefixexp(varOrExp(var_ square))(nameAndArgs(args((explist(exp(prefixexp(varOrExp(var_ num1))))))))))))(stat(varlist(var_ b6)) = (explist(exp(prefixexp(varOrExp(var_ fact))(nameAndArgs(args((explist(exp(prefixexp(varOrExp(var_ num2))))))))))))(stat(varlist(var_ res)) = (explist(exp(exp(prefixexp(varOrExp(var_ num1))))(operatorAddSub + )(exp(prefixexp(varOrExp(var_ num2)))))))(retstat
         return (explist(exp(prefixexp(varOrExp(var_ res))))))) end))(stat
-    function(funcname max)(funcbody((parlist(namelist num1, num2)))(block(stat(varlist(var_ a1)) = (explist(exp(prefixexp(varOrExp(var_ sub))(nameAndArgs(args((explist(exp(prefixexp(varOrExp(var_ num1)))), (exp(prefixexp(varOrExp(var_ num2))))))))))))(stat(varlist(var_ a2)) = (explist(exp(prefixexp(varOrExp(var_ add))(nameAndArgs(args((explist(exp(prefixexp(varOrExp(var_ num1)))), (exp(prefixexp(varOrExp(var_ num2))))))))))))(stat
+    function(funcname max)(funcbody((parlist(namelist num1, num2)))(block(stat local(attnamelist a1 attrib) = (explist(exp(prefixexp(varOrExp(var_ sub))(nameAndArgs(args((explist(exp(prefixexp(varOrExp(var_ num1)))), (exp(prefixexp(varOrExp(var_ num2))))))))))))(stat(varlist(var_ a2)) = (explist(exp(prefixexp(varOrExp(var_ add))(nameAndArgs(args((explist(exp(prefixexp(varOrExp(var_ num1)))), (exp(prefixexp(varOrExp(var_ num2))))))))))))(stat(varlist(var_ a3)) = (explist(exp(prefixexp(varOrExp(var_ add))(nameAndArgs(args((explist(exp(prefixexp(varOrExp(var_ num1)))), (exp(prefixexp(varOrExp(var_ num2))))))))))))(stat
         if (exp(prefixexp(varOrExp((exp(exp(prefixexp(varOrExp(var_ a1))))(operatorComparison > )(exp(prefixexp(varOrExp(var_ a2))))))))) then(block(stat(varlist(var_ result)) = (explist(exp(prefixexp(varOrExp(var_ a1)))))))
         else(block(stat(varlist(var_ result)) = (explist(exp(prefixexp(varOrExp(var_ a2))))))) end)(retstat
         return (explist(exp(prefixexp(varOrExp(var_ result)))));)) end))(stat
@@ -14,6 +14,6 @@
             return (explist(exp(number 1)))))
         else(block(retstat
             return (explist(exp(exp(prefixexp(varOrExp(var_ n))))(operatorMulDivMod * )(exp(prefixexp(varOrExp(var_ fact))(nameAndArgs(args((explist(exp(exp(prefixexp(varOrExp(var_ n))))(operatorAddSub - )(exp(number 1))))))))))))) end)) end))
-            (stat(varlist(var_ a)) = (explist(exp(number 5))))
-            (stat(varlist(var_ b)) = (explist(exp(number 6))))
-            (stat local(attnamelist res attrib) = (explist(exp(prefixexp(varOrExp(var_ max))(nameAndArgs(args((explist(exp(prefixexp(varOrExp(var_ a)))), (exp(prefixexp(varOrExp(var_ b))))))))))))(stat(functioncall(varOrExp(var_ print))(nameAndArgs(args((explist(exp(prefixexp(varOrExp(var_ res)))))))))))
+        (stat(varlist(var_ a)) = (explist(exp(number 5))))
+        (stat(varlist(var_ b)) = (explist(exp(number 6))))
+        (stat local(attnamelist res attrib) = (explist(exp(prefixexp(varOrExp(var_ max))(nameAndArgs(args((explist(exp(prefixexp(varOrExp(var_ a)))), (exp(prefixexp(varOrExp(var_ b))))))))))))(stat(functioncall(varOrExp(var_ print))(nameAndArgs(args((explist(exp(prefixexp(varOrExp(var_ res)))))))))))

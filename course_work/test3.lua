@@ -42,8 +42,8 @@ end
 
 
 
-function sub(num1, num2)
-  res = num1 - num2
+local function sub(num1, num2)
+  local res = num1 - num2
   res_square = square(res)
   return res_square
 end
@@ -55,7 +55,7 @@ function add(num1, num2)
   return res
 end
 
-function max(num1, num2)
+local function max(num1, num2)
   a1 = sub(num1, num2)
   a2 = add(num1, num2)
   a3 = add(num1, num2)
@@ -85,5 +85,6 @@ print "aaa"
 
 a = 5        -- read a 
 b = 6
+local c, d, e = 7, 8, 9
 local res = max(a, b)
 print(res)
