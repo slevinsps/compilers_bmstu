@@ -69,9 +69,10 @@ class LuaListener(LuaListenerDeclaration):
 
       childs_varlist = list(var_names)
       for i in range(len(childs_varlist)):
-        var_name = childs_varlist[i].NAME().getText()
+        var_name = childs_varlist[i].getText()
         var_fields = []
-        if childs_varlist[i].varSuffix() is not None and len(childs_varlist[i].varSuffix()) != 0:
+        if childs_varlist[i].getChildCount() > 0 and childs_varlist[i].varSuffix() is not None and len(childs_varlist[i].varSuffix()) != 0:
+          var_name = childs_varlist[i].NAME().getText()
           for j in range(len(childs_varlist[i].varSuffix())):
             if childs_varlist[i].varSuffix()[j].exp() is not None:
               var_field = self._get_value(childs_varlist[i].varSuffix()[j].exp())
