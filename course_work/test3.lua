@@ -58,7 +58,12 @@ end
 local function max(num1, num2)
   a1 = sub(num1, num2)
   a2 = add(num1, num2)
-  a3 = add(num1, num2)
+  ff = {d = 4, g = 1}
+  ff['d'] = 12
+  ff.d = 'hello'
+  ff['g'] = {v = {c = 'world'}, t = 45}
+
+  local a3 = add(num1, num2)
   if (a1 > a2) then
      result = a1
   else
@@ -76,6 +81,27 @@ function fact (n)
     return n * fact(n-1)
   end
 end
+
+
+function makeAdder(a)
+  a, n = 5
+  vv = a
+  bb = sub(a, n)
+  local nn = 18
+  return function (b)
+      local g = b
+      return function (o)
+          local da, net = 1, 3
+          return o + g - da + net
+      end
+  end
+end
+
+a, b, c = 9, 8
+
+localfunc = 3
+local localvar,         a2,     a3 = 5, 2, 1
+makeAdder(a)
   
 b = 'a("bbbbb")'
 print("enter a number:")
@@ -85,6 +111,6 @@ print "aaa"
 
 a = 5        -- read a 
 b = 6
-local c, d, e = 7, 8, 9
+local c, d, e = 7, 8
 local res = max(a, b)
 print(res)

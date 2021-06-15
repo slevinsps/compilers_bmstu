@@ -4,9 +4,10 @@ from exception import CompileError
 
 
 class Node:
-  def __init__(self, name, local = False):
+  def __init__(self, name, args = '', local = False):
     self.name = name
     self.local = local
+    self.args = args
     self.next = []
   
 class LuaListener(LuaListenerDeclaration):
@@ -28,9 +29,10 @@ class LuaListener(LuaListenerDeclaration):
                                }
 
     self.current_var_ = None
+    self.labels = []
     
-  def _add_function(self, funcname, local = False):
-    self.function_dict[funcname] = Node(funcname, local)  
+  def _add_function(self, funcname, args = '', local = False):
+    self.function_dict[funcname] = Node(funcname, args, local)  
     self.defined_functions.append(funcname)
     self.func_var_dict[funcname] = {}
     self.func_func_dict[funcname] = []
@@ -42,11 +44,29 @@ class LuaListener(LuaListenerDeclaration):
   def _get_value(self, ctx):
     res = None 
     if ctx.number() is not None:
-      res = float(ctx.number().getText())
+      res = (float(ctx.number().getText()), 'number')
     elif ctx.string() is not None:
-      res = ctx.string().getText().strip("'")
+      res = (ctx.string().getText().strip("'"), 'string')
+    elif ctx.prefixexp() is not None:
+      res = (ctx.prefixexp().getText(), 'prefixexp')
+    else: 
+      res = (ctx.getText(), 'other')
     return res
     
+  def _get_exp_table(self, ctx):
+    if ctx.tableconstructor() is None:
+      return self._get_value(ctx)[0]
+
+    field_dict = {}
+    fieldlist = ctx.tableconstructor().fieldlist()
+    if fieldlist is not None:
+      for field in fieldlist.field():
+        key = field.NAME().getText()
+        value = self._get_exp_table(field.exp()[0])
+        field_dict[key] = value
+    
+    return field_dict
+
   def _update_variables(self, ctx, mode = 'global'):
 
     if mode == 'global':
@@ -66,7 +86,8 @@ class LuaListener(LuaListenerDeclaration):
         var_names = ctx_list().var_()
       elif mode == 'local':
         var_names = ctx_list().NAME()
-
+      
+      # название переменных
       childs_varlist = list(var_names)
       for i in range(len(childs_varlist)):
         var_name = childs_varlist[i].getText()
@@ -75,27 +96,23 @@ class LuaListener(LuaListenerDeclaration):
           var_name = childs_varlist[i].NAME().getText()
           for j in range(len(childs_varlist[i].varSuffix())):
             if childs_varlist[i].varSuffix()[j].exp() is not None:
-              var_field = self._get_value(childs_varlist[i].varSuffix()[j].exp())
+              var_field, var_type = self._get_value(childs_varlist[i].varSuffix()[j].exp())
+              if var_type != 'string' and var_type != 'number':
+                raise CompileError('Error in table suffix type: ' +  str(var_field))
             else:
               var_field = childs_varlist[i].varSuffix()[j].NAME().getText()
             var_fields.append(var_field)
         vars_array.append({'name': var_name, 'field': var_fields})
-
+      # значение переменных
       childs_explist = list(ctx.explist().exp())
-
       for i in range(len(childs_explist)):
         if childs_explist[i].tableconstructor() is not None:
-          field_dict = {}
-          fieldlist = childs_explist[i].tableconstructor().fieldlist()
-          if fieldlist is not None:
-            for field in fieldlist.field():
-              key = field.NAME().getText()
-              value = self._get_value(field.exp()[0])
-              field_dict[key] = value
+          field_dict = self._get_exp_table(childs_explist[i])
           exp_array.append(field_dict)
         else:
-          exp_array.append(self._get_value(childs_explist[i]))
+          exp_array.append(self._get_value(childs_explist[i])[0])
 
+      # присваивание переменных
       for i in range(len(vars_array)):
         res = 'nil'
         if i < len(exp_array):
@@ -131,51 +148,9 @@ class LuaListener(LuaListenerDeclaration):
   def enterStat(self, ctx):
     self._update_variables(ctx, 'global')
     self._update_variables(ctx, 'local')
-
-    # print(dir(ctx))
-    # print('getText = ', ctx.getText())
-    # print('attnamelist = ', ctx.attnamelist())
-    # print('block = ', ctx.block())
-    # print('children = ', ctx.children)
-    # # print('copyFrom = ', ctx.copyFrom(c))
-    # print('depth = ', ctx.depth())
-    # # print('enterRule = ', ctx.enterRule())
-    # print('exception = ', ctx.exception)
-    # # print('exitRule = ', ctx.exitRule())
-    # print('exp = ', ctx.exp())
-    # print('explist = ', ctx.explist())
-    # if ctx.funcbody() is not None:
-    #   print('funcbody = ', ctx.funcbody().getText())
-    # if ctx.funcname() is not None:
-    #   print('funcname = ', ctx.funcname().getText())
-    # if ctx.functioncall() is not None:
-    #   print('functioncall = ', ctx.functioncall().getText())
-    # print('getAltNumber = ', ctx.getAltNumber())
-    # print('getChild = ', ctx.getChild(0).getText())
-    # print('getChildCount = ', ctx.getChildCount())
-    # childs = ctx.getChildren()
-    # for i in childs:
-    #   print(i.getText(), end=' ')
-    # print()
-    # # print('getChildren = ', ctx.getChildren())
-    # print('getPayload = ', ctx.getPayload().getText())
-    # print('getRuleContext = ', ctx.getRuleContext().getText())
-    # print('getRuleIndex = ', ctx.getRuleIndex())
-
-    # print('getSourceInterval = ', ctx.getSourceInterval())
-    # print('getText = ', ctx.getText())
-    # # print('getToken = ', ctx.getToken())
-    # # print('getTokens = ', ctx.getTokens())
-    # # print('getTypedRuleContext = ', ctx.getTypedRuleContext())
-    # print('invokingState = ', ctx.invokingState)
-    # print('isEmpty = ', ctx.isEmpty())
-    # print('label = ', ctx.label())
-    # print('namelist = ', ctx.namelist())
-    # print('varlist = ', ctx.varlist())
-    # print('parentCtx = ', ctx.parentCtx.getText())
-    # print('parser = ', ctx.parser)
-    # # print('toStringTree = ', ctx.toStringTree())
-    
+    if ctx.label() is not None:
+      label_name = ctx.label().NAME().getText()
+      self.labels.append(label_name)
 
   def exitStat(self, ctx):
     pass
@@ -189,7 +164,10 @@ class LuaListener(LuaListenerDeclaration):
 
   def enterFuncbody(self, ctx):
     childs_parent = list(ctx.parentCtx.getChildren())
-
+    args = ''
+    if ctx.parlist() is not None:
+      args = ctx.parlist().getText()
+   
     local = False
     if childs_parent[0].getText() == 'local':
       local = True
@@ -200,7 +178,7 @@ class LuaListener(LuaListenerDeclaration):
       else:
         current_funtion = self.defined_functions[-1]
         funcname = current_funtion + '_<inner_returned_func>'
-    self._add_function(funcname, local)
+    self._add_function(funcname, args, local)
     
 
   def exitFuncbody(self, ctx):

@@ -1,5 +1,13 @@
+function sub(a)
+  vv = 0
+  return vv
+end
+
+
 function makeAdder(a)
   a, n = 5
+  vv = a
+  bb = sub(a)
   local nn = 18
   return function (b)
       local g = b

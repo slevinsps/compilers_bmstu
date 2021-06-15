@@ -1,6 +1,7 @@
 import networkx as nx
 import random
 import matplotlib.pyplot as plt
+from terminaltables import AsciiTable
 from networkx.drawing.nx_agraph import to_agraph
 
 
@@ -38,10 +39,10 @@ def get_nodes_edges(function_dict):
   for key, val in function_dict.items():
     if len(val.next) == 0:
       continue
-    nodes.append(key)
+    nodes.append(f'{key}({val.args})' )
 
     for i in range(len(val.next)):
-      edges.append([key, val.next[i].name])
+      edges.append([f'{key}({val.args})', f'{val.next[i].name}({val.next[i].args})' ])
   return nodes, edges
 
 
@@ -57,16 +58,62 @@ def draw_tree(function_dict, file_name = "func_call.png"):
   for i in range(len(edges)):
     G.add_edge(edges[i][0], edges[i][1])
 
-  # # pos = hierarchy_pos(G)
-  # pos = nx.spring_layout(G,k=0.15,iterations=20)
-  # nx.draw_networkx_labels(G, pos, font_size = 7)
-  # nx.draw_networkx_edges(G, pos, arrows=True, arrowstyle='-|>', width = 0.5, arrowsize = 3)
-  # plt.savefig(file_name)
-
-
   G.graph['edge'] = {'arrowsize': '1', 'splines': 'curved'}
   G.graph['graph'] = {'scale': '3'}
 
   A = to_agraph(G)
   A.layout('dot')
   A.draw(file_name)
+
+
+def get_matrix(listener, num_func, local_flag = False):
+  matrix = [[''] * 4 for i in range(num_func + 1)]
+  matrix[0][1], matrix[0][2], matrix[0][3] = 'funcname', 'global', 'local'
+  func_count = 1
+  for name, variables in listener.func_var_dict.items():
+    if local_flag != listener.function_dict[name].local:
+      continue
+    args = listener.function_dict[name].args
+    matrix[func_count][0] = func_count
+    matrix[func_count][1] = f'{name}({args})'
+
+    global_vars = listener.func_global_var_dict[name]
+    local_vars = listener.func_local_var_dict[name]
+    for var, value in global_vars.items():
+      matrix[func_count][2] += f'{var}={listener.func_var_dict[name][var]}\n'
+    if len(global_vars) == 0:
+      matrix[func_count][2] = '-'
+    for var, value in local_vars.items():
+      matrix[func_count][3] += f'{var}={listener.func_var_dict[name][var]}\n'
+    if len(local_vars) == 0:
+      matrix[func_count][3] = '-'
+    func_count += 1
+  return matrix
+
+def print_var_matrix(listener):
+  num_local_functions = 0
+  num_global_functions = 0
+  for name, variables in listener.func_var_dict.items():
+    if listener.function_dict[name].local:
+      num_local_functions += 1
+    else:
+      num_global_functions += 1
+
+  print('Global functions:')
+  matrix = get_matrix(listener, num_global_functions, False)
+  table = AsciiTable(matrix)
+  table.inner_row_border = True
+  print(table.table)
+  print('\n\n')
+  print('Local functions:')
+  matrix = get_matrix(listener, num_local_functions, True)
+  table = AsciiTable(matrix)
+  table.inner_row_border = True
+  print(table.table)
+
+def print_labels(listener):
+  print('Labels:')
+  if len(listener.labels) == 0:
+    print('<no lables>')
+  for i in range(len(listener.labels)):
+    print(listener.labels[i])
