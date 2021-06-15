@@ -114,3 +114,12 @@ b = 6
 local c, d, e = 7, 8
 local res = max(a, b)
 print(res)
+
+o = {}
+o.n1, o.n2 = 1, 2
+
+o.str1, o.str2  = {1,2,3}, {4,5,6}
+o['str1'][3] = 100
+o['str1'][30] = 200
+
+o['str2'][3] = {'nn', 10, 20, {x = 5, y = 7}}

@@ -56,16 +56,19 @@ class LuaListener(LuaListenerDeclaration):
   def _get_exp_table(self, ctx):
     if ctx.tableconstructor() is None:
       return self._get_value(ctx)[0]
-
     field_dict = {}
+    array = []
     fieldlist = ctx.tableconstructor().fieldlist()
     if fieldlist is not None:
       for field in fieldlist.field():
-        key = field.NAME().getText()
         value = self._get_exp_table(field.exp()[0])
-        field_dict[key] = value
+        if field.NAME() is None:
+          array.append(value)
+        else:
+          key = field.NAME().getText()
+          field_dict[key] = value
     
-    return field_dict
+    return field_dict, array
 
   def _update_variables(self, ctx, mode = 'global'):
 
@@ -97,6 +100,8 @@ class LuaListener(LuaListenerDeclaration):
           for j in range(len(childs_varlist[i].varSuffix())):
             if childs_varlist[i].varSuffix()[j].exp() is not None:
               var_field, var_type = self._get_value(childs_varlist[i].varSuffix()[j].exp())
+              if var_type == 'number':
+                var_field = int(var_field)
               if var_type != 'string' and var_type != 'number':
                 raise CompileError('Error in table suffix type: ' +  str(var_field))
             else:
@@ -107,8 +112,8 @@ class LuaListener(LuaListenerDeclaration):
       childs_explist = list(ctx.explist().exp())
       for i in range(len(childs_explist)):
         if childs_explist[i].tableconstructor() is not None:
-          field_dict = self._get_exp_table(childs_explist[i])
-          exp_array.append(field_dict)
+          field_dict, array_field = self._get_exp_table(childs_explist[i])
+          exp_array.append([field_dict, array_field])
         else:
           exp_array.append(self._get_value(childs_explist[i])[0])
 
@@ -124,11 +129,24 @@ class LuaListener(LuaListenerDeclaration):
           var_dict_current = var_dict[current_funtion][var['name']]
           func_var_dict = self.func_var_dict[current_funtion][var['name']]
           for j in range(len(var['field']) - 1):
-            var_dict_current = var_dict_current[var['field'][j]]
-            func_var_dict = func_var_dict[var['field'][j]]
-          
-          var_dict_current[var['field'][-1]] = res
-          func_var_dict[var['field'][-1]] = res
+            field = var['field'][j]
+            dict_, array_ = var_dict_current
+            if type(field) == int and field >= 1 and field <= len(array_):
+              var_dict_current = array_[field - 1]
+              func_var_dict = array_[field - 1]
+            else:
+              var_dict_current = dict_[field]
+              func_var_dict = dict_[field]
+
+          field = var['field'][-1]
+          dict_, array_ = var_dict_current
+          if type(field) == int and field >= 1 and field <= len(array_):
+            var_dict_current[1][field - 1] = res
+            func_var_dict[1][field - 1] = res
+          else:
+            var_dict_current[0][field] = res
+            func_var_dict[0][field] = res
+
         else:
           var_dict[current_funtion][var['name']] = res
           self.func_var_dict[current_funtion][var['name']] = res
