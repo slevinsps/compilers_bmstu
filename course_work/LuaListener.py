@@ -17,6 +17,8 @@ class LuaListener(LuaListenerDeclaration):
     self.function_dict = {self.base_name_function: Node(self.base_name_function)}
     self.func_var_dict = {}
     self.func_var_dict[self.base_name_function] = {}
+    self.func_var_type_dict = {}
+    self.func_var_type_dict[self.base_name_function] = {}
     self.func_local_var_dict = {}
     self.func_local_var_dict[self.base_name_function] = {}
     self.func_global_var_dict = {}
@@ -25,16 +27,19 @@ class LuaListener(LuaListenerDeclaration):
     self.func_func_dict[self.base_name_function] = []
     self.defined_functions = [self.base_name_function]
     self.reserved_func_names = {'print' : ['string', None], 
-                                'io.read' : ['string', 'string'], 
+                                'io.read' : ['string', 'string'],
+                                'ipairs' : [],
+                                'error' : []
                                }
 
     self.current_var_ = None
     self.labels = []
     
   def _add_function(self, funcname, args = '', local = False):
-    self.function_dict[funcname] = Node(funcname, args, local)  
+    self.function_dict[funcname] = Node(funcname, args, local) 
     self.defined_functions.append(funcname)
     self.func_var_dict[funcname] = {}
+    self.func_var_type_dict[funcname] = {}
     self.func_func_dict[funcname] = []
     self.func_local_var_dict[funcname] = {}
     self.func_global_var_dict[funcname] = {}
@@ -50,34 +55,57 @@ class LuaListener(LuaListenerDeclaration):
     elif ctx.prefixexp() is not None:
       res = (ctx.prefixexp().getText(), 'prefixexp')
     else: 
-      res = (ctx.getText(), 'other')
+      res = (ctx.getText(), 'expression')
     return res
     
   def _get_exp_table(self, ctx):
     if ctx.tableconstructor() is None:
-      return self._get_value(ctx)[0]
+      var_field, var_type = self._get_value(ctx)
+      if var_type == 'prefixexp':
+        if len(ctx.prefixexp().nameAndArgs()) != 0:
+          var_field = f'<func> {var_field}'
+        else:
+          var_field = f'<var> {var_field}'
+      return var_field, var_type
+
+
     field_dict = {}
-    array = []
+    array = {}
+    counter = 1
     fieldlist = ctx.tableconstructor().fieldlist()
     if fieldlist is not None:
       for field in fieldlist.field():
-        value = self._get_exp_table(field.exp()[0])
+        value, type_ = self._get_exp_table(field.exp()[0])
         if field.NAME() is None:
-          array.append(value)
+          if field.getText()[0] == '[':
+            key, key_type_ = self._get_exp_table(field.exp()[0])
+            value, val_type_ = self._get_exp_table(field.exp()[1])
+            if key_type_ == 'string':
+              key = key.strip('"')
+              field_dict[key] = value
+            elif key_type_ == 'number':
+              key = int(key)
+              if key < 1:
+                raise CompileError(f'Index {key} out of range')
+              array[key] = value
+          else:
+            array[counter] = value
+            counter += 1
         else:
           key = field.NAME().getText()
           field_dict[key] = value
-    
-    return field_dict, array
+    return [field_dict, array], 'table'
 
   def _update_variables(self, ctx, mode = 'global'):
 
     if mode == 'global':
       ctx_list = ctx.varlist
       var_dict = self.func_global_var_dict
+      var_dict_other = self.func_local_var_dict
     elif mode == 'local':
       ctx_list = ctx.attnamelist
       var_dict = self.func_local_var_dict
+      var_dict_other = self.func_global_var_dict
     else:
       return 
 
@@ -102,54 +130,69 @@ class LuaListener(LuaListenerDeclaration):
               var_field, var_type = self._get_value(childs_varlist[i].varSuffix()[j].exp())
               if var_type == 'number':
                 var_field = int(var_field)
-              if var_type != 'string' and var_type != 'number':
+              elif var_type == 'prefixexp':
+                var_field = f'<var> {var_field}'
+              elif var_type == 'string':
+                var_field = var_field.replace('"', '').replace("'", '')
+              else:
                 raise CompileError('Error in table suffix type: ' +  str(var_field))
             else:
               var_field = childs_varlist[i].varSuffix()[j].NAME().getText()
             var_fields.append(var_field)
         vars_array.append({'name': var_name, 'field': var_fields})
+
       # значение переменных
       childs_explist = list(ctx.explist().exp())
       for i in range(len(childs_explist)):
         if childs_explist[i].tableconstructor() is not None:
-          field_dict, array_field = self._get_exp_table(childs_explist[i])
-          exp_array.append([field_dict, array_field])
+          [field_dict, array_field], var_type = self._get_exp_table(childs_explist[i])
+          exp_array.append([[field_dict, array_field], var_type])
         else:
-          exp_array.append(self._get_value(childs_explist[i])[0])
+          var_field, var_type = self._get_value(childs_explist[i])
+          if var_type == 'prefixexp':
+            if len(childs_explist[i].prefixexp().nameAndArgs()) != 0:
+              var_type = 'func'
+              var_field = f'<func> {var_field}'
+            else:
+              var_type = 'var'
+              var_field = f'<var> {var_field}'
+          exp_array.append([var_field, var_type])
 
       # присваивание переменных
       for i in range(len(vars_array)):
-        res = 'nil'
+        res = ['nil', 'nil']
         if i < len(exp_array):
           res = exp_array[i]
         
         var = vars_array[i]
         current_funtion = self.defined_functions[-1]
         if len(var['field']) > 0:
-          var_dict_current = var_dict[current_funtion][var['name']]
           func_var_dict = self.func_var_dict[current_funtion][var['name']]
           for j in range(len(var['field']) - 1):
             field = var['field'][j]
-            dict_, array_ = var_dict_current
+            dict_, array_ = func_var_dict
             if type(field) == int and field >= 1 and field <= len(array_):
-              var_dict_current = array_[field - 1]
-              func_var_dict = array_[field - 1]
+              func_var_dict = array_[field]
             else:
-              var_dict_current = dict_[field]
               func_var_dict = dict_[field]
 
           field = var['field'][-1]
-          dict_, array_ = var_dict_current
-          if type(field) == int and field >= 1 and field <= len(array_):
-            var_dict_current[1][field - 1] = res
-            func_var_dict[1][field - 1] = res
+          dict_, array_ = func_var_dict
+          if type(field) == int:
+            if field >= 1:
+              func_var_dict[1][field] = res[0]
+            else:
+              raise CompileError(f'Index {field} out of range')
           else:
-            var_dict_current[0][field] = res
-            func_var_dict[0][field] = res
+            func_var_dict[0][field] = res[0]
 
         else:
-          var_dict[current_funtion][var['name']] = res
-          self.func_var_dict[current_funtion][var['name']] = res
+          var_dict[current_funtion][var['name']] = res[0]
+          if var['name'] in var_dict_other[current_funtion]:
+            del var_dict_other[current_funtion][var['name']]
+
+          self.func_var_dict[current_funtion][var['name']] = res[0]
+          self.func_var_type_dict[current_funtion][var['name']] = res[1]
 
 
   def handleInfo(self):
@@ -159,6 +202,8 @@ class LuaListener(LuaListenerDeclaration):
           self.function_dict[key].next.append(self.function_dict[v]) 
         elif v in self.reserved_func_names:
           self.function_dict[key].next.append(Node(v)) 
+        elif v in self.func_var_dict[key] or v in self.function_dict[key].args:
+          continue
         else:
           raise CompileError('No such function name ' +  str(v))
 
@@ -184,7 +229,7 @@ class LuaListener(LuaListenerDeclaration):
     childs_parent = list(ctx.parentCtx.getChildren())
     args = ''
     if ctx.parlist() is not None:
-      args = ctx.parlist().getText()
+      args = ctx.parlist().getText().split(',')
    
     local = False
     if childs_parent[0].getText() == 'local':

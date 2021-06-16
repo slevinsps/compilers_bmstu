@@ -39,7 +39,7 @@ def get_nodes_edges(function_dict):
   for key, val in function_dict.items():
     if len(val.next) == 0:
       continue
-    nodes.append(f'{key}({val.args})' )
+    nodes.append(f'{key}({str(val.args)})' )
 
     for i in range(len(val.next)):
       edges.append([f'{key}({val.args})', f'{val.next[i].name}({val.next[i].args})' ])
@@ -65,6 +65,8 @@ def draw_tree(function_dict, file_name = "func_call.png"):
   A.layout('dot')
   A.draw(file_name)
 
+def chunkstring(string, length):
+  return (string[0+i:length+i] for i in range(0, len(string), length))
 
 def get_matrix(listener, num_func, local_flag = False):
   matrix = [[''] * 4 for i in range(num_func + 1)]
@@ -80,11 +82,17 @@ def get_matrix(listener, num_func, local_flag = False):
     global_vars = listener.func_global_var_dict[name]
     local_vars = listener.func_local_var_dict[name]
     for var, value in global_vars.items():
-      matrix[func_count][2] += f'{var}={listener.func_var_dict[name][var]}\n'
+      str_ = f'{var}={listener.func_var_dict[name][var]}\n'
+      str_ = '\n'.join(chunkstring(str_, 50))
+      type_ = listener.func_var_type_dict[name][var]
+      matrix[func_count][2] += f'{str_} | type = {type_}\n'
     if len(global_vars) == 0:
       matrix[func_count][2] = '-'
     for var, value in local_vars.items():
-      matrix[func_count][3] += f'{var}={listener.func_var_dict[name][var]}\n'
+      str_ = f'{var}={listener.func_var_dict[name][var]}\n'
+      str_ = '\n'.join(chunkstring(str_, 50))
+      type_ = listener.func_var_type_dict[name][var]
+      matrix[func_count][3] += f'{str_} | type = {type_}\n'
     if len(local_vars) == 0:
       matrix[func_count][3] = '-'
     func_count += 1

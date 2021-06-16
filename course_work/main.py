@@ -8,7 +8,7 @@ from utils import draw_tree, print_var_matrix, print_labels
 
 
 def main(argv):
-  input_stream = FileStream(argv[1])
+  input_stream = FileStream(argv[1], encoding = "cp1251")
   lexer = LuaLexer(input_stream)
   stream = CommonTokenStream(lexer)
   parser = LuaParser(stream)

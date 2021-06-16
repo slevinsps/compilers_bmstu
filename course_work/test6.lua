@@ -1,11 +1,15 @@
--- o = {'nn', 10, 20, 30}
--- b = {a = 20, b = 10}
--- o[2] = 12
-o = {}
-o.n1, o.n2 = 1, 2
+local function imap(t, f, ...)
+    local result = {}
 
-o.str1, o.str2  = {1,2,3}, {4,5,6}
-o['str1'][3] = 100
-o['str1'][30] = 200
+    for i, v in ipairs(t) do
+        aa = 5
+        result[i] = f(v, ...)
+        result[ii] = aa()
+        result['dd'] = 5
+        result['vv'] = 'rrr'
+        result['gg'] = {a = 12, b = 5, 'aa', 2, c = {1, 2, 3, d = f(), c = a}}
 
-o['str2'][3] = {'nn', 10, 20, {x = 5, y = 7}}
+    end
+
+    return result
+end
