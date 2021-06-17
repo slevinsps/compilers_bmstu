@@ -9,7 +9,7 @@ function lvl5 (n)
   end 
 end
 
-function lvl4 (n)
+local function lvl4 (n)
   for i = 1, n % 4 do
     print("lvl4")
     lvl5(i*n/4)

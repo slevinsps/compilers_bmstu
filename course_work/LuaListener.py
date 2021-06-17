@@ -35,14 +35,14 @@ class LuaListener(LuaListenerDeclaration):
     self.current_var_ = None
     self.labels = []
     
-  def _add_function(self, funcname, args = '', local = False):
-    self.function_dict[funcname] = Node(funcname, args, local) 
-    self.defined_functions.append(funcname)
-    self.func_var_dict[funcname] = {}
-    self.func_var_type_dict[funcname] = {}
-    self.func_func_dict[funcname] = []
-    self.func_local_var_dict[funcname] = {}
-    self.func_global_var_dict[funcname] = {}
+  def _add_function(self, funcname, args = '', local = False, parent = None):
+    self.function_dict[(funcname, parent)] = Node((funcname, parent), args, local) 
+    self.defined_functions.append((funcname, parent))
+    self.func_var_dict[(funcname, parent)] = {}
+    self.func_var_type_dict[(funcname, parent)] = {}
+    self.func_func_dict[(funcname, parent)] = []
+    self.func_local_var_dict[(funcname, parent)] = {}
+    self.func_global_var_dict[(funcname, parent)] = {}
     self.local_flag = False
 
 
@@ -167,6 +167,9 @@ class LuaListener(LuaListenerDeclaration):
         var = vars_array[i]
         current_funtion = self.defined_functions[-1]
         if len(var['field']) > 0:
+          if var['name'] not in self.func_var_dict[current_funtion]:
+            var_name = var['name']
+            raise CompileError(f'No such variable {var_name}')
           func_var_dict = self.func_var_dict[current_funtion][var['name']]
           for j in range(len(var['field']) - 1):
             field = var['field'][j]
@@ -198,13 +201,27 @@ class LuaListener(LuaListenerDeclaration):
   def handleInfo(self):
     for key, val in self.func_func_dict.items():
       for v in val:
-        if v in self.function_dict:
-          self.function_dict[key].next.append(self.function_dict[v]) 
-        elif v in self.reserved_func_names:
-          self.function_dict[key].next.append(Node(v)) 
-        elif v in self.func_var_dict[key] or v in self.function_dict[key].args:
-          continue
-        else:
+        v_copy = v
+        base_func = v_copy[0]
+        v_arr = [v]
+        while v_copy != self.base_name_function:
+          v_copy = v_copy[1]
+          v_arr.append((base_func, v_copy))
+        
+        check_flag = False
+        for v_nested in v_arr:
+          if v_nested in self.function_dict:
+            check_flag = True
+            self.function_dict[key].next.append(self.function_dict[v_nested]) 
+            break
+          elif v_nested[0] in self.reserved_func_names:
+            check_flag = True
+            self.function_dict[key].next.append(Node(v_nested)) 
+            break
+          elif v_nested[0] in self.func_var_dict[key] or v_nested[0] in self.function_dict[key].args:
+            check_flag = True
+            break
+        if not check_flag:
           raise CompileError('No such function name ' +  str(v))
 
 
@@ -226,22 +243,29 @@ class LuaListener(LuaListenerDeclaration):
     pass
 
   def enterFuncbody(self, ctx):
+    local = False
+    current_funtion = self.defined_functions[-1]
+    if current_funtion != self.base_name_function:
+      local = True
     childs_parent = list(ctx.parentCtx.getChildren())
     args = ''
     if ctx.parlist() is not None:
       args = ctx.parlist().getText().split(',')
    
-    local = False
     if childs_parent[0].getText() == 'local':
       local = True
       funcname = childs_parent[2].getText()
     else:
       if len(childs_parent) == 3:
         funcname = childs_parent[1].getText()
+        if '.' in funcname:
+          table_name = funcname.split('.')[0]
+          if table_name not in self.func_var_dict[current_funtion]:
+            raise CompileError(f'No such table {table_name}')
+          local = True
       else:
-        current_funtion = self.defined_functions[-1]
-        funcname = current_funtion + '_<inner_returned_func>'
-    self._add_function(funcname, args, local)
+        funcname = current_funtion[0] + '_<inner_returned_func>'
+    self._add_function(funcname, args, local, current_funtion)
     
 
   def exitFuncbody(self, ctx):
@@ -263,7 +287,8 @@ class LuaListener(LuaListenerDeclaration):
   def enterArgs(self, ctx):
     if self.current_var_:
       current_funtion = self.defined_functions[-1]
-      self.func_func_dict[current_funtion].append(self.current_var_)
+
+      self.func_func_dict[current_funtion].append((self.current_var_, current_funtion))
       self.current_var_ = None
 
   def exitArgs(self, ctx):

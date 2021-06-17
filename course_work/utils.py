@@ -77,7 +77,9 @@ def get_matrix(listener, num_func, local_flag = False):
       continue
     args = listener.function_dict[name].args
     matrix[func_count][0] = func_count
-    matrix[func_count][1] = f'{name}({args})'
+    func_name = f'{name}({args})'
+    str_ = '\n'.join(chunkstring(func_name, 40))
+    matrix[func_count][1] = str_
 
     global_vars = listener.func_global_var_dict[name]
     local_vars = listener.func_local_var_dict[name]
