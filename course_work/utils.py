@@ -36,13 +36,21 @@ def hierarchy_pos(G, root=None, width=1., vert_gap = 0.2, vert_loc = 0, xcenter 
 
 def get_nodes_edges(function_dict):
   nodes, edges = [], []
-  for key, val in function_dict.items():
-    if len(val.next) == 0:
-      continue
-    nodes.append(f'{key}({str(val.args)})' )
+  layer = [function_dict['_G']]
+  called_funcs = set()
+  while len(layer) > 0:
+    root_node = layer.pop()
+    nodes.append(f'{root_node.name}({str(root_node.args)})' )
+    called_funcs.add(root_node)
 
-    for i in range(len(val.next)):
-      edges.append([f'{key}({val.args})', f'{val.next[i].name}({val.next[i].args})' ])
+    for i in range(len(root_node.next)):
+      if len(root_node.next) == 0:
+        continue
+
+      edges.append([f'{root_node.name}({root_node.args})', f'{root_node.next[i].name}({root_node.next[i].args})' ])
+      if root_node.next[i] not in called_funcs:
+        layer.append(root_node.next[i])
+          
   return nodes, edges
 
 
@@ -85,14 +93,14 @@ def get_matrix(listener, num_func, local_flag = False):
     local_vars = listener.func_local_var_dict[name]
     for var, value in global_vars.items():
       str_ = f'{var}={listener.func_var_dict[name][var]}\n'
-      str_ = '\n'.join(chunkstring(str_, 50))
+      str_ = '\n'.join(chunkstring(str_, 40))
       type_ = listener.func_var_type_dict[name][var]
       matrix[func_count][2] += f'{str_} | type = {type_}\n'
     if len(global_vars) == 0:
       matrix[func_count][2] = '-'
     for var, value in local_vars.items():
       str_ = f'{var}={listener.func_var_dict[name][var]}\n'
-      str_ = '\n'.join(chunkstring(str_, 50))
+      str_ = '\n'.join(chunkstring(str_, 40))
       type_ = listener.func_var_type_dict[name][var]
       matrix[func_count][3] += f'{str_} | type = {type_}\n'
     if len(local_vars) == 0:

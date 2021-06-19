@@ -4,12 +4,27 @@ function MyAddOn.FirstFunction(arg1, arg2)
     some = 1 
     return 
 end
-bb = 7
-cc = {aa = 45}
-ccc['bb'] = 10
-MyAddOn.FirstFunction(a, b)
 
+function func(aa)
+    aa.FirstFunction(5, 6)
+end
+
+MyAddOn.FirstFunction(a, b)
+func(4)
+
+
+function func3(aa)
+    return aa
+end
+
+bb = {a = 6, c = func3}
  
+r = bb['c'](5)
+
+rr = func
+vv = rr
+bbb = rr(6)
+vv(7)
 -- function a1(x1, x2)
 --     c = 51
 --     local function b2(r, rr)

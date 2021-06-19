@@ -50,6 +50,7 @@ MyAddOn.FirstFunction(a, b)
 
 function MyAddOn.inside.SecondFunction(arg1, arg2) return end
 
+aaa = MyAddOn
 
 local widgets = {
   { id = 246, num1 = 90885, val2 = "NA" },

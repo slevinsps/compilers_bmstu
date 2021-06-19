@@ -29,6 +29,7 @@ class LuaListener(LuaListenerDeclaration):
     self.reserved_func_names = {'print' : ['string', None], 
                                 'io.read' : ['string', 'string'],
                                 'ipairs' : [],
+                                'pairs': [],
                                 'error' : []
                                }
 
@@ -94,7 +95,7 @@ class LuaListener(LuaListenerDeclaration):
         else:
           key = field.NAME().getText()
           field_dict[key] = value
-    return [field_dict, array], 'table'
+    return {'dict': field_dict, 'array': array, 'methods': []}, 'table'
 
   def _update_variables(self, ctx, mode = 'global'):
 
@@ -132,6 +133,8 @@ class LuaListener(LuaListenerDeclaration):
                 var_field = int(var_field)
               elif var_type == 'prefixexp':
                 var_field = f'<var> {var_field}'
+                print('AAA', var_field)
+                return 
               elif var_type == 'string':
                 var_field = var_field.replace('"', '').replace("'", '')
               else:
@@ -145,8 +148,8 @@ class LuaListener(LuaListenerDeclaration):
       childs_explist = list(ctx.explist().exp())
       for i in range(len(childs_explist)):
         if childs_explist[i].tableconstructor() is not None:
-          [field_dict, array_field], var_type = self._get_exp_table(childs_explist[i])
-          exp_array.append([[field_dict, array_field], var_type])
+          var_value, var_type = self._get_exp_table(childs_explist[i])
+          exp_array.append([var_value, var_type])
         else:
           var_field, var_type = self._get_value(childs_explist[i])
           if var_type == 'prefixexp':
@@ -168,26 +171,29 @@ class LuaListener(LuaListenerDeclaration):
         current_funtion = self.defined_functions[-1]
         if len(var['field']) > 0:
           if var['name'] not in self.func_var_dict[current_funtion]:
-            var_name = var['name']
-            raise CompileError(f'No such variable {var_name}')
+            if var['name'] not in self.function_dict[current_funtion].args:
+              var_name = var['name']
+              raise CompileError(f'No such variable {var_name}')
+            else:
+              self.func_var_dict[current_funtion][var['name']] = [{}, {}]
+
           func_var_dict = self.func_var_dict[current_funtion][var['name']]
           for j in range(len(var['field']) - 1):
             field = var['field'][j]
-            dict_, array_ = func_var_dict
+            dict_, array_ = func_var_dict['dict'], func_var_dict['array']
             if type(field) == int and field >= 1 and field <= len(array_):
               func_var_dict = array_[field]
             else:
               func_var_dict = dict_[field]
 
           field = var['field'][-1]
-          dict_, array_ = func_var_dict
           if type(field) == int:
             if field >= 1:
-              func_var_dict[1][field] = res[0]
+              func_var_dict['array'][field] = res[0]
             else:
               raise CompileError(f'Index {field} out of range')
           else:
-            func_var_dict[0][field] = res[0]
+            func_var_dict['dict'][field] = res[0]
 
         else:
           var_dict[current_funtion][var['name']] = res[0]
@@ -200,10 +206,17 @@ class LuaListener(LuaListenerDeclaration):
 
   def handleInfo(self):
     for key, val in self.func_func_dict.items():
+     
       for v in val:
-        v_copy = v
+        var_name = v[0]['name'] 
+        var_name_orig = v[0]['name_orig']
+        fields = v[0]['field']
+        current_funtion = v[1]
+        full_name = (var_name_orig, current_funtion)
+
+        v_copy = full_name
         base_func = v_copy[0]
-        v_arr = [v]
+        v_arr = [full_name]
         while v_copy != self.base_name_function:
           v_copy = v_copy[1]
           v_arr.append((base_func, v_copy))
@@ -216,14 +229,25 @@ class LuaListener(LuaListenerDeclaration):
             break
           elif v_nested[0] in self.reserved_func_names:
             check_flag = True
-            self.function_dict[key].next.append(Node(v_nested)) 
+            self.function_dict[key].next.append(Node((v_nested[0], self.base_name_function))) 
             break
-          elif v_nested[0] in self.func_var_dict[key] or v_nested[0] in self.function_dict[key].args:
-            check_flag = True
-            break
+          # elif v_nested[0] in self.func_var_dict[key] or v_nested[0] in self.function_dict[key].args:
+          #   check_flag = True
+          #   break
         if not check_flag:
-          raise CompileError('No such function name ' +  str(v))
-
+          exist_var, exist_method = self._check_var_exists(v[0], current_funtion)
+          func_name = var_name_orig
+          if exist_method:
+            func_name = var_name_orig
+          else:
+            if exist_var:
+              func_name = '<var> ' + var_name_orig
+            else:
+              if var_name not in self.function_dict[current_funtion].args:
+                raise CompileError(f'No such function {var_name}')
+              else:
+                func_name = '<arg> ' + var_name_orig
+          self.function_dict[key].next.append(Node((func_name, current_funtion))) 
 
   def enterStat(self, ctx):
     self._update_variables(ctx, 'global')
@@ -258,11 +282,42 @@ class LuaListener(LuaListenerDeclaration):
     else:
       if len(childs_parent) == 3:
         funcname = childs_parent[1].getText()
+
         if '.' in funcname:
           table_name = funcname.split('.')[0]
-          if table_name not in self.func_var_dict[current_funtion]:
+          if table_name not in self.func_var_dict[current_funtion] and table_name not in self.function_dict[current_funtion].args:
             raise CompileError(f'No such table {table_name}')
+
+          fields = funcname.split('.')[1:-1]
           local = True
+          if table_name in self.func_var_dict[current_funtion]:
+            func_var_dict = self.func_var_dict[current_funtion][table_name]
+            if len(fields) == 0:
+              func_var_dict['methods'].append(funcname)
+            else:
+              for j in range(len(fields) - 1):
+                dict_, array_ = func_var_dict['dict'], func_var_dict['array']
+                if type(fields[j]) == int and fields[j] >= 1 and fields[j] <= len(array_):
+                  if fields[j] not in array_:
+                    raise CompileError(f'No such field {fields[j]}')
+                  func_var_dict = array_[fields[j]]
+                else:
+                  if fields[j] not in dict_:
+                    raise CompileError(f'No such field {fields[j]}')
+                  func_var_dict = dict_[fields[j]]
+
+              field = fields[-1]
+              if type(field) == int:
+                if field >= 1:
+                  if field not in func_var_dict['array'] or type(func_var_dict['array'][field]) is not dict:
+                    raise CompileError(f'No such field {field}')
+                  func_var_dict['array'][field]['methods'].append(funcname)
+                else:
+                  raise CompileError(f'Index {field} out of range')
+              else:
+                if field not in func_var_dict['dict'] or type(func_var_dict['dict'][field]) is not dict:
+                  raise CompileError(f'No such field {field}')
+                func_var_dict['dict'][field]['methods'].append(funcname)         
       else:
         funcname = current_funtion[0] + '_<inner_returned_func>'
     self._add_function(funcname, args, local, current_funtion)
@@ -279,17 +334,83 @@ class LuaListener(LuaListenerDeclaration):
 
   def enterVar_(self, ctx):
     var_name = ctx.getText()
-    self.current_var_ = var_name
+    self.current_var_ = ctx
     
   def exitVar_(self, ctx):
     pass
 
-  def enterArgs(self, ctx):
-    if self.current_var_:
-      current_funtion = self.defined_functions[-1]
 
-      self.func_func_dict[current_funtion].append((self.current_var_, current_funtion))
-      self.current_var_ = None
+  def _check_var_exists(self, var, current_funtion):
+    var_name = var['name'] 
+    fields = var['field']
+    method_name = '.'.join([var_name] + fields)
+    exist_var = False
+    exist_method = False
+    if var_name in self.func_var_dict[current_funtion]:
+      func_var_dict = self.func_var_dict[current_funtion][var_name]
+      if len(fields) == 0:
+        exist_var = True
+      else:
+        for j in range(len(fields) - 1):
+          dict_, array_ = func_var_dict['dict'], func_var_dict['array']
+          if type(fields[j]) == int and fields[j] >= 1 and fields[j] <= len(array_):
+            if fields[j] not in array_:
+              raise CompileError(f'No such field {fields[j]}')
+            func_var_dict = array_[fields[j]]
+          else:
+            if fields[j] not in dict_:
+              raise CompileError(f'No such field {fields[j]}')
+            func_var_dict = dict_[fields[j]]
+
+        field = fields[-1]
+        if type(field) == int:
+          if field >= 1:
+            if field not in func_var_dict['array']:
+              raise CompileError(f'No such field {field}')
+            exist_var = True
+          else:
+            raise CompileError(f'Index {field} out of range')
+        else:
+          if field not in func_var_dict['dict']:
+            if method_name not in func_var_dict['methods']:
+              raise CompileError(f'No such field {field}')
+            else:
+              exist_method = True
+          exist_var = True
+
+    return exist_var, exist_method
+
+  def enterArgs(self, ctx):
+
+    if not self.current_var_:
+      return 
+
+    var_name = self.current_var_.getText()
+    var_name_orig = self.current_var_.getText()
+    var_fields = []
+    if self.current_var_.varSuffix() is not None and len(self.current_var_.varSuffix()) != 0:
+      var_name = self.current_var_.NAME().getText()
+      for j in range(len(self.current_var_.varSuffix())):
+        if self.current_var_.varSuffix()[j].exp() is not None:
+          var_field, var_type = self._get_value(self.current_var_.varSuffix()[j].exp())
+          if var_type == 'number':
+            var_field = int(var_field)
+          elif var_type == 'prefixexp':
+            var_field = f'<var> {var_field}'
+          elif var_type == 'string':
+            var_field = var_field.replace('"', '').replace("'", '')
+          else:
+            raise CompileError('Error in table suffix type: ' +  str(var_field))
+        else:
+          var_field = self.current_var_.varSuffix()[j].NAME().getText()
+        var_fields.append(var_field)
+    var = {'name': var_name, 'field': var_fields, 'name_orig': var_name_orig}
+
+    # var_name = self.current_var_.getText()
+    current_funtion = self.defined_functions[-1]
+    
+    self.func_func_dict[current_funtion].append((var, current_funtion))
+    self.current_var_ = None
 
   def exitArgs(self, ctx):
       pass

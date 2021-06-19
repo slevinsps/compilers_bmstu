@@ -1,5 +1,3 @@
--- defines a factorial function
-
 function lvl5 (n)
   for i = 1, n % 5 do
     print("lvl5")
