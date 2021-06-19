@@ -13,7 +13,7 @@ def main(argv):
   stream = CommonTokenStream(lexer)
   parser = LuaParser(stream)
   tree = parser.block()
-  print(Trees.toStringTree(tree, None, parser))
+  # print(Trees.toStringTree(tree, None, parser))
   listener = LuaListener()
   walker = ParseTreeWalker()
   walker.walk(listener, tree)

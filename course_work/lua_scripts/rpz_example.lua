@@ -13,12 +13,8 @@ function func4 (n)
 end
 
 function func3 (n)
-  local function func3_inner_function(n)
-    return n + 1
-  end
   print("func3")
   b, c = 5, 8
-  b = func3_inner_function(b)
   func4(b + c + n)
 end
 
@@ -37,10 +33,13 @@ function func1 (n)
 end
 
 function square(num)
+  local function square_inner_function(n)
+    return n + 1
+  end
+  num = square_inner_function(num)
   res = num * num
   return res
 end
-
 
 local function sub(num1, num2)
   local res = num1 - num2
@@ -56,15 +55,28 @@ end
 
 
 a, b, c = 9, 8
-a = 5
 res_func = func1(a)
 res_add = add(b, c)
 local a1, a2, a3 = 5, 2, 1
-b = 'a("bbbbb")'
+-- a = 5
+-- b = 'a("bbbbb")'
 
-o = {}
-o.n1, o.n2 = 1, 2
-o.str1, o['str2']  = {1,2,3}, {4,5,6}
-o['str1'][3] = 100
-o['str1'][30] = 200
-o['str2'][3] = {'nn', 10, 20, {x = 5, y = 7}}
+my_table = {a = 5}
+-- my_table.n1, my_table.n2 = 1, 2
+-- my_table.str1, my_table['str2'] = {1,2,3}, {4,5,6}
+-- my_table['str1'][3] = 100
+-- my_table['str1'][30] = 200
+-- my_table['str2'][3] = {'nn', 10, 20, {x = 5, y = 7}}
+
+-- function my_table.table_method(arg1, arg2) 
+--   local some = 3 
+--   res = arg1 + arg2 + some
+--   return res
+-- end
+
+-- res_example = my_table.table_method(51, 10)
+-- print(res_example)
+
+-- my_table['square_'] = square
+-- res_square = my_table['square_'](5)
+-- print(res_square)

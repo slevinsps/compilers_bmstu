@@ -133,7 +133,6 @@ class LuaListener(LuaListenerDeclaration):
                 var_field = int(var_field)
               elif var_type == 'prefixexp':
                 var_field = f'<var> {var_field}'
-                print('AAA', var_field)
                 return 
               elif var_type == 'string':
                 var_field = var_field.replace('"', '').replace("'", '')
@@ -343,7 +342,7 @@ class LuaListener(LuaListenerDeclaration):
   def _check_var_exists(self, var, current_funtion):
     var_name = var['name'] 
     fields = var['field']
-    method_name = '.'.join([var_name] + fields)
+    method_name = '.'.join([str(var_name)] + list(map(str, fields)))
     exist_var = False
     exist_method = False
     if var_name in self.func_var_dict[current_funtion]:
@@ -352,6 +351,9 @@ class LuaListener(LuaListenerDeclaration):
         exist_var = True
       else:
         for j in range(len(fields) - 1):
+          if type(func_var_dict) is not dict:
+            raise CompileError(f'No such field {fields[j]}')
+
           dict_, array_ = func_var_dict['dict'], func_var_dict['array']
           if type(fields[j]) == int and fields[j] >= 1 and fields[j] <= len(array_):
             if fields[j] not in array_:
@@ -362,6 +364,10 @@ class LuaListener(LuaListenerDeclaration):
               raise CompileError(f'No such field {fields[j]}')
             func_var_dict = dict_[fields[j]]
 
+
+        if type(func_var_dict) is not dict:
+          raise CompileError(f'No such field {fields[-1]}')
+          
         field = fields[-1]
         if type(field) == int:
           if field >= 1:
